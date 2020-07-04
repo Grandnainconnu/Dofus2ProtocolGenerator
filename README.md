@@ -1,0 +1,1 @@
+# Dofus2ProtocolGenerator

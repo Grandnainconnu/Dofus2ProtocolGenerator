@@ -1,0 +1,21 @@
+{
+    "name": "hetarnam/dofus-protocol-generator",
+    "description": "Dofus2 templated protocol generator",
+    "type": "project",
+    "authors": [
+        { 
+            "name": "Jean Walrave",
+            "email": "jean.walrave@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "twig/twig": "^3.0"
+    },
+    "autoload": {
+        "files": [
+            "./configuration/configuration.php"
+        ],
+        "psr-4": {"App\\": "src/"}
+    }
+}

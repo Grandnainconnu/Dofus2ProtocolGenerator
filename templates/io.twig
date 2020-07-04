@@ -1,0 +1,117 @@
+{% block serialize %}
+public{% if class.isOverriding %} override{% elseif class.isVirtial %} virtual{% endif %} void Serialize(IBinaryWriter writer)
+{
+{%~ if class.serializeParent and class.parent %}
+    base.Serialize(writer);
+{%~ endif %}
+{% set isInBooleanByteField = false %}
+{% set booleanByteFieldsCount = 0 %}
+{%~ for field in class.fields -%}
+    {%- if field.useBooleanByteWrapper -%}
+        {%- if isInBooleanByteField == false -%}
+            {%- set isInBooleanByteField = true %}
+    byte box{{ booleanByteFieldsCount }} = 0;
+        {%- endif ~%}
+    box{{ booleanByteFieldsCount }} = BooleanByteWrapper.SetFlag(box{{ booleanByteFieldsCount }}, {{ field.booleanByteWrapperPosition }}, {{ field.name|ucfirst }});
+        {%- if class.fields[loop.index0 + 1].useBooleanByteWrapper == false or class.fields[loop.index0 + 1].position != field.position ~%}
+    writer.WriteByte(box{{ booleanByteFieldsCount }});
+            {%~ set isInBooleanByteField = false -%}
+            {%- set booleanByteFieldsCount = booleanByteFieldsCount + 1 -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if field.writeMethod -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthWriteMethod %}
+    writer.{{ field.lengthWriteMethod|ucfirst }}(({{ field.lengthType }}){{ field.name|ucfirst }}.Count());
+                {%~ endif %}
+    foreach (var current in {{ field.name|ucfirst }})
+    {
+        writer.{{ field.writeMethod|ucfirst }}(current);
+    }
+            {%~ else %}
+    writer.{{ field.writeMethod|ucfirst }}({{ field.name|ucfirst }});
+            {%~ endif -%}
+        {%- else -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthWriteMethod %}
+    writer.{{ field.lengthWriteMethod|ucfirst }}(({{ field.lengthType }}){{ field.name|ucfirst }}.Count());
+                {%~ endif %}
+    foreach (var current in {{ field.name|ucfirst }})
+    {
+                {%- if field.needTypeIdDefinition ~%}
+        writer.{{ field.typeIdWriteMethod|ucfirst }}(current.TypeId);
+                {%- endif ~%}
+        current.Serialize(writer);
+    }
+            {%~ else -%}
+                {% if field.needTypeIdDefinition %}
+    writer.{{ field.typeIdWriteMethod|ucfirst }}({{ field.name|ucfirst }}.TypeId);
+                {%~ endif %}
+    {{ field.name|ucfirst }}.Serialize(writer);
+            {%~ endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+}
+{% endblock %}
+
+{% block deserialize %}
+public{% if class.isOverriding %} override{% elseif class.isVirtial %} virtual{% endif %} void Deserialize(IBinaryReader reader)
+{
+{%~ if class.serializeParent and class.parent %}
+    base.Deserialize(reader);
+{%~ endif %}
+{% set isInBooleanByteField = false %}
+{% set booleanByteFieldsCount = 0 %}
+{%~ for field in class.fields -%}
+    {%- if field.useBooleanByteWrapper -%}
+        {%- if isInBooleanByteField == false -%}
+            {%- set isInBooleanByteField = true %}
+    byte box{{ booleanByteFieldsCount }} = reader.ReadByte();
+        {%- endif ~%}
+    {{ field.name|ucfirst }} = BooleanByteWrapper.GetFlag(box{{ booleanByteFieldsCount }}, {{ field.booleanByteWrapperPosition }});
+        {%- if class.fields[loop.index0 + 1].useBooleanByteWrapper == false or class.fields[loop.index0 + 1].position != field.position ~%}
+            {%~ set isInBooleanByteField = false -%}
+            {%- set booleanByteFieldsCount = booleanByteFieldsCount + 1 -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if field.readMethod -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthReadMethod %}
+    var count{{ field.name|ucfirst }} = reader.{{ field.lengthReadMethod|ucfirst }}();
+                {%~ endif %}
+    {{ field.name|ucfirst }} = new List<{{ field.type }}>();
+    for ({{ field.lengthType }} i = 0; i < {% if field.lengthReadMethod %}count{{ field.name|ucfirst }}{% else %}{{ field.constantLength }}{% endif %}; i++)
+    {
+        {{ field.name|ucfirst }}.Add(reader.{{ field.readMethod|ucfirst }}());
+    }
+            {%~ else %}
+    {{ field.name|ucfirst }} = reader.{{ field.readMethod|ucfirst }}();
+            {%~ endif -%}
+        {%- else -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthReadMethod %}
+    var count{{ field.name|ucfirst }} = reader.{{ field.lengthReadMethod|ucfirst }}();
+                {%~ endif %}
+    {{ field.name|ucfirst }} = new List<{{ field.type }}>();
+    for ({{ field.lengthType }} i = 0; i < {% if field.lengthReadMethod %}count{{ field.name|ucfirst }}{% else %}{{ field.constantLength }}{% endif %}; i++)
+    {
+                {%- if field.needTypeIdDefinition ~%}
+        var {{ field.name }}typeId = reader.{{ field.typeIdReadMethod|ucfirst }}();
+                {%- endif ~%}
+        {{ field.type }} type = new {{ field.type }}();
+        type.Deserialize(reader);
+        {{ field.name|ucfirst }}.Add(type);
+    }
+            {%~ else -%}
+                {% if field.needTypeIdDefinition %}
+    var {{ field.name }}TypeId = reader.{{ field.typeIdReadMethod|ucfirst }}();
+                {%~ endif %}
+    {{ field.name|ucfirst }} = new {{ field.type }}();
+    {{ field.name|ucfirst }}.Deserialize(reader);
+            {%~ endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+}
+{% endblock %}

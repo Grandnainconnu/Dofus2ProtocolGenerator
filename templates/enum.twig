@@ -1,0 +1,10 @@
+namespace HetwanSharp.Dofus.Protocol.Enum
+{
+    public enum {{ class.name }}: {{ class.type }}
+    {
+{% for key, value in class.members %}
+        {{ key }} = {{ value }}{% if loop.last == false %},{% endif %}
+
+{% endfor %}
+    }
+}

@@ -1,0 +1,32 @@
+{%- use 'io.twig' -%}
+{%- use 'constructor.twig' -%}
+using HetwanSharp.Core.IO;
+{% if class.hasEnumerationDependency == true %}
+using HetwanSharp.Dofus.Protocol.Enum;
+{% endif %}
+using System;
+{% if class.hasVectorDependency %}
+using System.Collections.Generic;
+using System.Linq;
+{% endif %}
+
+namespace HetwanSharp.Dofus.Protocol.Type
+{
+    public class {{ class.name }}{% if class.parent %} : {{ class.parent.name }}{% endif ~%}
+    {
+        public const short Id = {{ class.id }};
+        public {% if class.isOverriding %} override {% elseif class.isVirtual %} virtual {% endif %}short TypeId => Id;
+{%~ block class_fields -%}
+        {{ parent()|ident(8) }}
+{%- endblock -%}
+{%- block constructor -%}
+        {{ parent()|ident(8) }}
+{%~ endblock -%}
+{%~ block serialize -%}
+        {{ parent()|ident(8) }}
+{%~ endblock -%}
+{%~ block deserialize -%}
+        {{ parent()|ident(8) }}
+{%- endblock %}
+    }
+}

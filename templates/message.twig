@@ -1,0 +1,35 @@
+{%- use 'io.twig' -%}
+{%- use 'constructor.twig' -%}
+using HetwanSharp.Core.IO;
+{% if class.hasTypeDependency == true %}
+using HetwanSharp.Dofus.Protocol.Type;
+{% endif %}
+{% if class.hasEnumerationDependency == true %}
+using HetwanSharp.Dofus.Protocol.Enum;
+{% endif %}
+using System;
+{% if class.hasVectorDependency %}
+using System.Collections.Generic;
+using System.Linq;
+{% endif %}
+
+namespace HetwanSharp.Dofus.Protocol.Message
+{
+    public class {{ class.name }}{% if class.parent %} : {{ class.parent.name }}{% else %} : DofusMessage{% endif ~%}
+    {
+        public const uint Id = {{ class.id }};
+        public override uint MessageId => Id;
+{%~ block class_fields -%}
+        {{ parent()|ident(8) }}
+{%- endblock -%}
+{%- block constructor -%}
+        {{ parent()|ident(8) }}
+{%~ endblock -%}
+{%~ block serialize -%}
+        {{ parent()|ident(8) }}
+{%~ endblock -%}
+{%~ block deserialize -%}
+        {{ parent()|ident(8) }}
+{%- endblock %}
+    }
+}

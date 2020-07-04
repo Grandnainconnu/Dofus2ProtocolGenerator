@@ -1,0 +1,34 @@
+{% block class_fields %}
+{%- for field in fields ~%}
+public {% if field.isVector == true %}ICollection<{{ field.type }}>{% else %}{{ field.type }}{% endif %} {{ field.name|ucfirst }}{% if field.value != null %} = {{ field.value }}{% endif %};
+{%- if loop.last == true ~%}
+{%~ endif ~%}
+{%- endfor ~%}
+{% endblock %}
+
+{% block constructor %}
+public {{ class.name }}(){% if class.parent %}: base(){% endif ~%}
+{
+}
+{%~ set constructorFields = class.parentFields|merge(class.fields) -%}
+{%- if constructorFields|length > 0 ~%}
+public {{ class.name }}(
+{%- for field in constructorFields ~%}
+    {% if field.isVector == true %}ICollection<{{ field.type }}>{% else %}{{ field.type }}{% endif %} {{ field.name|mytolower }}{% if loop.last == false %},{% endif %}
+    {%- if loop.last == true ~%}
+    {%~ endif ~%}
+{%- endfor -%}
+){% if class.parent %}: base(
+{%- for field in class.parentFields ~%}
+    {{ field.name|mytolower }}{% if loop.last == false %},{% endif %}
+    {%- if loop.last == true ~%}
+    {%~ endif ~%}
+{%- endfor -%}
+){% endif ~%}
+{
+{%- for field in class.fields ~%}
+    {{ field.name|ucfirst }} = {{ field.name|mytolower }};
+{%- endfor ~%}    
+}
+{%~ endif %}
+{% endblock %}
