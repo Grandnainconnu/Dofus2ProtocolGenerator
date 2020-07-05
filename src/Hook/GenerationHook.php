@@ -41,15 +41,15 @@ class GenerationHook
         }
     }
 
-    public static function executeFilters(array &$objects): void
+    public static function executeFilters(array &$objects, string $group): void
     {
         foreach (self::$globalFilters as $filter) {
-            $filter($objects);
+            $filter($objects, $group);
         }
 
         foreach (self::$filters as $filter) {
             foreach ($objects as $objectKey => &$object) {
-                if ($filter($object) === false) {
+                if ($filter($object, $group) === false) {
                     unset($objects[$objectKey]);
                 }
             }

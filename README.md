@@ -29,8 +29,9 @@ And also add filters before generation, defined like this:
 
 Simple filter:
 ```
-GenerationHook::addFilter(function (object $object): bool {
+GenerationHook::addFilter(function (object $object, string $groupName): bool {
     // $object will be ClassType (for messages and types) or EnumerationType
+    // $groupName will be `enumerations`, `types` or `messages`
 
     // Your code here...
     
@@ -41,9 +42,10 @@ GenerationHook::addFilter(function (object $object): bool {
 
 Global filter:
 ```
-GenerationHook::addFilter(function (array &$objects): void {
+GenerationHook::addFilter(function (array &$objects, string $groupName): void {
     // $objects will be an array of ClassType or EnumerationType
     // It is also a reference so you can update the array $objects directly to affect the generation
+    // $groupName will be `enumerations`, `types` or `messages`
 
     // Your code here...
 }, true);
@@ -61,10 +63,11 @@ Each template will have a `class` parameter given containing all necessary membe
 ### For message and type template:
 - class.name (string)
 - class.type (string)
-- parent (object or null)
-- children (array)
-- namespace (string)
-- fields (array)
+- class.parent (object or null)
+- class.children (array)
+- class.namespace (string)
+- class.fields (array)
+
   - #### Field type
   - name (string)
   - type (string)
@@ -84,12 +87,13 @@ Each template will have a `class` parameter given containing all necessary membe
   - useBooleanByteWrapper (bool)
   - booleanByteWrapperPosition (int)
   - needTypeIdDefinition (bool)
-- hasVectorDependency (bool)
-- hasTypeDependency (bool)
-- hasEnumerationDependency (bool)
-- typeDependencies (array)
-- enumerationDependencies (array)
-- serializeParent (bool)
-- forceOverride (bool)
-- isVirtual (bool)
-- isOverriding (bool)
+
+- class.hasVectorDependency (bool)
+- class.hasTypeDependency (bool)
+- class.hasEnumerationDependency (bool)
+- class.typeDependencies (array)
+- class.enumerationDependencies (array)
+- class.serializeParent (bool)
+- class.forceOverride (bool)
+- class.isVirtual (bool)
+- class.isOverriding (bool)

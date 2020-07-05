@@ -142,7 +142,7 @@ GenerationHook::getTwig()->addFilter(
  * Custom filter to avoid using of C# reserved words or types having 
  * the same name as class members
  */
-GenerationHook::addFilter(function (object $object): bool {
+GenerationHook::addFilter(function (object $object, string $_): bool {
     if ($object instanceof ClassType === true) {
         foreach ($object->getFields() as $field) {
             if (strtoupper($field->getName()) === strtoupper($field->getType()) ||

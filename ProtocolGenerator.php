@@ -80,8 +80,8 @@ foreach (array_merge(array_values($protocol['types']), array_values($protocol['m
     $classType->setDependencies($protocol);
 }
 
-foreach ($protocol as $group) {
-    GenerationHook::executeFilters($group);
+foreach ($protocol as $groupName => $group) {
+    GenerationHook::executeFilters($group, $groupName);
 }
 
 /**
