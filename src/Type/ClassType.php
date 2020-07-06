@@ -387,7 +387,10 @@ class ClassType implements TypeBase
      */ 
     public function getHasVectorDependency(): bool
     {
-        return $this->hasVectorDependency;
+        return 
+            $this->hasVectorDependency ||
+            $this->parent && $this->parent->getHasVectorDependency()
+        ;
     }
 
     /**
