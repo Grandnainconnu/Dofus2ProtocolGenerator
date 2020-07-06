@@ -1,5 +1,5 @@
 {% block serialize %}
-public{% if class.isOverriding %} override{% elseif class.isVirtial %} virtual{% endif %} void Serialize(IBinaryWriter writer)
+public{% if class.isOverriding %} override{% elseif class.isVirtual %} virtual{% endif %} void Serialize(IBinaryWriter writer)
 {
 {%~ if class.serializeParent and class.parent %}
     base.Serialize(writer);
@@ -56,7 +56,7 @@ public{% if class.isOverriding %} override{% elseif class.isVirtial %} virtual{%
 {% endblock %}
 
 {% block deserialize %}
-public{% if class.isOverriding %} override{% elseif class.isVirtial %} virtual{% endif %} void Deserialize(IBinaryReader reader)
+public{% if class.isOverriding %} override{% elseif class.isVirtual %} virtual{% endif %} void Deserialize(IBinaryReader reader)
 {
 {%~ if class.serializeParent and class.parent %}
     base.Deserialize(reader);
