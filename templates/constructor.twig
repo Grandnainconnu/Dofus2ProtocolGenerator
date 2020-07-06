@@ -1,5 +1,5 @@
 {% block class_fields %}
-{%- for field in fields ~%}
+{%- for field in class.fields ~%}
 public {% if field.isVector == true %}ICollection<{{ field.type }}>{% else %}{{ field.type }}{% endif %} {{ field.name|ucfirst }}{% if field.value != null %} = {{ field.value }}{% endif %};
 {%- if loop.last == true ~%}
 {%~ endif ~%}
