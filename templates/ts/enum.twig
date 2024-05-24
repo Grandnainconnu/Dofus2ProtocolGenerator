@@ -1,0 +1,5 @@
+export enum {{ class.name }} {
+{% for key, value in class.members %}
+    {{ key }} = {{ value }},
+{% endfor %}
+}

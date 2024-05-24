@@ -24,14 +24,14 @@ class GenerationHook
      */
     private static $globalFilters = [];
 
-    public static function initializeTwig(): void
+    public static function initializeTwig($template): void
     {
-        $loader = new FilesystemLoader(ROOT . '/templates');
+        $loader = new FilesystemLoader(ROOT . '/templates/' . $template);
         $twig = new Environment($loader);
 
         self::$twig = $twig;
     }
-    
+
     public static function addFilter(callable $filter, bool $isGlobal = false): void
     {
         if ($isGlobal === false) {

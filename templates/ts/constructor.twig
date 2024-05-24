@@ -1,0 +1,29 @@
+{% block class_fields %}
+{%- for field in class.fields ~%}
+public {{ field.name }}: {% if field.isVector == true %}{{ field.type }}[]{% else %}{{ field.type }}{% endif %} | undefined{% if field.value != null %} = {{ field.value }}{% endif %};
+{%- if loop.last == true ~%}
+{%~ endif ~%}
+{%- endfor ~%}
+{%- endblock -%}
+
+{% block constructor %}
+{%~ set constructorFields = class.parentFields|merge(class.fields) -%}
+{%- if constructorFields|length > 0 ~%}
+public constructor({%- for field in constructorFields %}{{ field.name }}?: {% if field.isVector == true %}{{ field.type }}[]{% else %}{{ field.type }}{% endif %} | undefined{% if loop.last == false %}, {% endif %}{%- endfor -%}
+) {
+    {%- if class.parentFields|length > 0 ~%}
+    super(
+    {%- for field in class.parentFields -%}
+        {{ field.name }}{% if loop.last == false %}, {% endif %}
+    {%- endfor -%}
+    );
+    {%- else ~%}
+    super();
+    {%- endif %}
+{%- for field in class.fields ~%}
+    this.{{ field.name }} = {{ field.name }};
+
+{%- endfor ~%}    
+}
+{%~ endif %}
+{% endblock %}

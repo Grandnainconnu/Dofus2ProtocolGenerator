@@ -4,31 +4,12 @@ const ROOT = __DIR__;
 
 require_once __DIR__ . '/vendor/autoload.php';
 
+use App\Helper\GenerationHelper;
 use App\Hook\GenerationHook;
 use App\Type\{
     ClassType,
-    ClassFieldType,
     EnumerationType,
 };
-
-/**
- * Path parsing and generation functions
- */
-function createOutputFolder(string $folderPath) {
-    @mkdir($folderPath, 0777, true);
-}
-
-function getOutputFolder(string $namespace): string {
-    return str_replace('.', '/', str_replace('com.ankamagames.dofus.network.', '', $namespace)) . '/';
-}
-
-function getOutputPath(string $namespace, string $fileName): string {
-    $folderPath = OUTPUT_FOLDER . '/' . getOutputFolder($namespace);
-
-    createOutputFolder($folderPath);
-
-    return $folderPath . '/' . $fileName . LANGUAGE_EXTENSION;
-}
 
 if (($rawProtocolContent = file_get_contents($argv[1] ?? 'protocol.json')) === null) {
     echo 'Unable to read protocol file.' . PHP_EOL;
@@ -89,23 +70,41 @@ foreach ($protocol as $groupName => $group) {
  */
 $twig = GenerationHook::getTwig();
 
+file_put_contents(GenerationHelper::getOutputPath('', 'protocol'),
+    $twig->render('protocol.twig', [
+        'enumerations' => array_map(function (EnumerationType $enumeration) use ($twig): string {
+            return $twig->render('enum.twig', ['class' => $enumeration]);
+        }, $protocol['enumerations']),
+        'types' => array_map(function (ClassType $type) use ($twig): string {
+            return $twig->render('type.twig', ['class' => $type]);
+        }, $protocol['types']),
+        'messages' => array_map(function (ClassType $message) use ($twig): string {
+            return $twig->render('message.twig', ['class' => $message]);
+        }, $protocol['messages']),
+        'typesObjects' => $protocol['types'],
+        'messagesObjects' => $protocol['messages'],
+    ]),
+);
+
+/*
 foreach ($protocol['enumerations'] as $enumeration) {
     file_put_contents(
-        getOutputPath('enumerations', $enumeration->getName()), 
+        GenerationHelper::getOutputPath('enumerations', $enumeration->getName()),
         $twig->render('enum.twig', ['class' => $enumeration])
     );
 }
 
 foreach ($protocol['messages'] as $message) {
     file_put_contents(
-        getOutputPath($message->getNamespace(), $message->getName()), 
+        GenerationHelper::getOutputPath($message->getNamespace(), $message->getName()), 
         $twig->render('message.twig', ['class' => $message])
     );
 }
 
 foreach ($protocol['types'] as $type) {
     file_put_contents(
-        getOutputPath($type->getNamespace(), $type->getName()), 
+        GenerationHelper::getOutputPath($type->getNamespace(), $type->getName()), 
         $twig->render('type.twig', ['class' => $type])
     );
 }
+*/

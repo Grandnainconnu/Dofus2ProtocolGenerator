@@ -1,0 +1,19 @@
+{%- use 'io.twig' -%}
+{%- use 'constructor.twig' -%}
+
+export class {{ class.name }}{% if class.parent %} extends {{ class.parent.name }}{% else %} extends DofusType{% endif %} {
+    public static id: number = {{ class.id }};
+    public id: number = {{ class.id }};
+{%~ block class_fields -%}
+    {{ parent()|ident(4) }}
+{%- endblock -%}
+{%- block constructor -%}
+    {{ parent()|ident(4) }}
+{%~ endblock -%}
+{%~ block serialize -%}
+    {{ parent()|ident(4) }}
+{%~ endblock -%}
+{%~ block deserialize -%}
+    {{ parent()|ident(4) }}
+{%- endblock %}
+}

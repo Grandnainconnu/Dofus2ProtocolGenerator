@@ -103,7 +103,7 @@ class ClassFieldType implements TypeBase
     public function parseProtocol(array $object): void
     {
         $this->name = $object['name'];
-        $this->isVector = $object['is_vector'] ?? false;
+        $this->isVector = @$object['is_vector'] || str_starts_with($object['type'], 'Vector') ?? false;
         $this->constantLength = $object['constant_length'] ?? 0;
         $this->value = $object['default_value'] ?? null;
         $this->position = $object['position'] ?? 0;
@@ -119,16 +119,28 @@ class ClassFieldType implements TypeBase
             'max' => null
         ];
 
+        $rawType = $object['type'] ?? null;
+        $type = $rawType;
+
         if ($this->isVector === true) {
+            $type = str_replace('Vector<', '', $type);
+            $type = str_replace('>', '', $type);
+
+            if (str_contains($type, ':')) {
+                $type = explode(':', $type)[1];
+            }
+
             $this->lengthWriteMethod = MethodMappingHelper::getMethod('write_length_method', $object);
             $this->lengthReadMethod = MethodMappingHelper::getReadingMethod($this->lengthWriteMethod);
 
             $typeWritingOutput = TypeMappingHelper::getTypeByWritingMethod($this->lengthWriteMethod, 'int');
             
             $this->lengthType = $typeWritingOutput['type'];
+
+            var_dump($type);
         }
 
-        $typeWritingOutput = TypeMappingHelper::getTypeByWritingMethod($this->writeMethod, $object['type']);
+        $typeWritingOutput = TypeMappingHelper::getTypeByWritingMethod($this->writeMethod, $type);
 
         $this->type = $typeWritingOutput['type'];
         

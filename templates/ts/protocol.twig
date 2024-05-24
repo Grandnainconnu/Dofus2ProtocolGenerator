@@ -1,0 +1,29 @@
+import { bigEndianSetFlag as setFlag, bigEndianGetFlag as getFlag, type BinaryDataWriter, type BinaryDataReader } from '@hetwan.io';
+
+import { DofusMessage, DofusType } from '@hetwan/protocol';
+
+{% for enumeration in enumerations %}
+{{ enumeration|raw }}
+
+{%~ endfor %}
+
+{% for type in types %}
+{{ type|raw }}
+
+{%~ endfor %}
+
+{% for message in messages %}
+{{ message|raw }}
+{%~ endfor -%}
+
+export const types: { [key: number]: typeof DofusType } = {
+    {%- for type in typesObjects ~%}
+    {{ type.id }}: {{ type.name }},
+    {%- endfor ~%}
+};
+
+export const messages: { [key: number]: typeof DofusMessage } = {
+    {%- for message in messagesObjects ~%}
+    {{ message.id }}: {{ message.name }},
+    {%- endfor ~%}
+};

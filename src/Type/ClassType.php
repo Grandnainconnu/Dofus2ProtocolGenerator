@@ -76,15 +76,25 @@ class ClassType implements TypeBase
      */
     private $forceOverride = false;
 
+    /**
+     * @var bool
+     */
+    private $hasBooleanByteWrapperDependency = false;
+
+    /**
+     * @var bool
+     */
+    private $hasTypeIdDefinitionDependency = false;
+
     public function parseProtocol(array $object): void
     {
         // Sort fields by position
         usort($object['fields'], function (array $a, array $b) {
-            if ($a['position'] === $b['position']) {
-                return $a['boolean_byte_wrapper_position'] <=> $b['boolean_byte_wrapper_position'];
+            if (@$a['position'] === @$b['position']) {
+                return @$a['boolean_byte_wrapper_position'] <=> @$b['boolean_byte_wrapper_position'];
             }
 
-            return $a['position'] <=> $b['position'];
+            return @$a['position'] <=> @$b['position'];
         });
 
         $this->id = $object['protocolID'];
@@ -94,6 +104,10 @@ class ClassType implements TypeBase
         $this->namespace = $object['namespace'];
 
         foreach ($object['fields'] as $objectField) {
+            if ($objectField['name'] === "_isInitialized" || $objectField['type'] === "FuncTree") {
+                continue;
+            }
+
             $field = new ClassFieldType();
             $field->parseProtocol($objectField);
 
@@ -111,6 +125,8 @@ class ClassType implements TypeBase
     public function setDependencies(array $protocol): void
     {
         foreach ($protocol as $groupName => $group) {
+            $groupDependencies = [];
+    
             if ($this->parentName !== null && isset($group[$this->parentName])) {
                 // Set current type parent
                 $this->parent = $group[$this->parentName];
@@ -119,11 +135,17 @@ class ClassType implements TypeBase
                 $this->parent->addChild($this);
             }
     
-            $groupDependencies = [];
-    
             foreach ($this->fields as $field) {
+                if ($field->getUseBooleanByteWrapper() === true) {
+                    $this->hasBooleanByteWrapperDependency = true;
+                }
+
+                if ($field->getNeedTypeIdDefinition() === true) {
+                    $this->hasTypeIdDefinitionDependency = true;
+                }
+
                 if ($field->getIsObjectType() === true && isset($group[$field->getType()])) {
-                    $groupDependencies[] = $group[$field->getType()];
+                    $groupDependencies[$field->getType()] = $group[$field->getType()];
                 }
             }
     
@@ -451,7 +473,7 @@ class ClassType implements TypeBase
      * Set the value of hasEnumerationDependency
      *
      * @param  bool  $hasEnumerationDependency
-     *
+     *Preset
      * @return  self
      */ 
     public function setHasEnumerationDependency(bool $hasEnumerationDependency)
@@ -480,7 +502,7 @@ class ClassType implements TypeBase
     public function addTypeDependency(string $type): self
     {
         if (in_array($type, $this->typeDependencies) === false) {
-            $this->typeDependencies[] = $type;
+            $this->typeDependencies[$type] = $type;
         }
 
         return $this;
@@ -583,6 +605,54 @@ class ClassType implements TypeBase
     public function setForceOverride(bool $forceOverride): self
     {
         $this->forceOverride = $forceOverride;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of hasBooleanByteWrapperDependency
+     *
+     * @return  bool
+     */
+    public function getHasBooleanByteWrapperDependency(): bool
+    {
+        return $this->hasBooleanByteWrapperDependency;
+    }
+
+    /**
+     * Set the value of hasBooleanByteWrapperDependency
+     *
+     * @param  bool  $hasBooleanByteWrapperDependency
+     *
+     * @return  self
+     */
+    public function setHasBooleanByteWrapperDependency(bool $hasBooleanByteWrapperDependency): self
+    {
+        $this->hasBooleanByteWrapperDependency = $hasBooleanByteWrapperDependency;
+
+        return $this;
+    }
+
+    /**
+     * Get the value of hasBooleanByteWrapperDependency
+     *
+     * @return  bool
+     */
+    public function getHasTypeIdDefinitionDependency(): bool
+    {
+        return $this->hasTypeIdDefinitionDependency;
+    }
+
+    /**
+     * Set the value of hasTypeIdDefinitionDependency
+     *
+     * @param  bool  $hasTypeIdDefinitionDependency
+     *
+     * @return  self
+     */
+    public function setHasTypeIdDefinitionDependency(bool $hasTypeIdDefinitionDependency): self
+    {
+        $this->hasTypeIdDefinitionDependency = $hasTypeIdDefinitionDependency;
 
         return $this;
     }

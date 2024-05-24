@@ -1,5 +1,6 @@
 <?php
 
+use App\Helper\GenerationHelper;
 use App\Hook\GenerationHook;
 use App\Type\ClassType;
 
@@ -16,34 +17,31 @@ const OUTPUT_FOLDER = __DIR__ . '/../output';
 /**
  * Extension of generated protocol files
  */
-const LANGUAGE_EXTENSION = '.cs';
+const LANGUAGE_EXTENSION = '.ts';
+
+/**
+ * Template used for generation
+ */
+const TEMPLATE = 'ts';
 
 /**
  * Basic AS types override
  */
 const BASIC_TYPE_MAPPER = [
-    'uint' => 'uint',
-    'int' => 'int',
-    'Boolean' => 'bool',
+    'uint' => 'number',
+    'int' => 'number',
+    'Boolean' => 'boolean',
     'String' => 'string',
-    'Number' => 'long'
+    'Number' => 'BigInt',
 ];
 
 /**
  * Field type mapped by writing method(s) 
  */
 const WRITE_TYPE_MAPPER = [
-    'byte' => [ 'writeByte' ],
-    'long' => [ 'writeVarLong' ],
-    'uint' => [ 'writeVarUInt', 'writeUInt' ],
-    'int' => [ 'writeInt', 'writeVarInt' ],
-    'short' => [ 'writeShort', 'writeVarShort' ],
-    'ushort' => [ 'writeUShort', 'writeVarUShort' ],
-    'string' => [ 'writeUTF' ],
-    'bool' => [ 'writeBoolean' ],
-    'float' => [ 'writeFloat' ],
-    'char' => [ 'writeChar' ],
-    'double' => [ 'writeDouble' ]
+    'number' => ['writeByte', 'writeShort', 'writeVarShort', 'writeUShort', 'writeVarUShort', 'writeInt', 'writeVarInt', 'writeVarUInt', 'writeUInt', 'writeFloat', 'writeVarLong', 'writeDouble'],
+    'string' => ['writeUTF', 'writeChar'],
+    'boolean' => ['writeBoolean'],
 ];
 
 /**
@@ -84,10 +82,6 @@ const RESERVED_WORD_CLASS_MEMBER_STRATEGY = [
         'object',
         'id',
         'class',
-        'params',
-        'base',
-        'messageid',
-        'typeid'
     ]
 ];
 
@@ -96,7 +90,7 @@ const RESERVED_WORD_CLASS_MEMBER_STRATEGY = [
  * 
  * DO NOT TOUCH THIS
  */
-GenerationHook::initializeTwig();
+GenerationHook::initializeTwig(TEMPLATE);
 
 /**
  * Add "ident" filter to indent correctly with $n spaces
@@ -107,7 +101,7 @@ GenerationHook::initializeTwig();
 GenerationHook::getTwig()->addFilter(
     new TwigFilter('ident', function (string $string, int $number): string {
         $spaces = str_repeat(' ', $number);
-    
+
         return rtrim(preg_replace('#^(.+)$#m', sprintf('%1$s$1', $spaces), $string), '\t ');
     }, array('is_safe' => array('all')))
 );
@@ -133,7 +127,7 @@ GenerationHook::getTwig()->addFilter(
         }
 
         $toLower = substr($string, 0, $toLowerCount);
-    
+
         return strtolower($toLower) . substr($string, $toLowerCount);
     }, array('is_safe' => array('all')))
 );
@@ -145,10 +139,11 @@ GenerationHook::getTwig()->addFilter(
 GenerationHook::addFilter(function (object $object, string $_): bool {
     if ($object instanceof ClassType === true) {
         foreach ($object->getFields() as $field) {
-            if (strtoupper($field->getName()) === strtoupper($field->getType()) ||
+            if ( //strtoupper($field->getName()) === strtoupper($field->getType()) ||
                 in_array(strtoupper($field->getName()), array_map(function (string $word): string {
                     return strtoupper($word);
-                }, RESERVED_WORD_CLASS_MEMBER_STRATEGY['list']))) {
+                }, RESERVED_WORD_CLASS_MEMBER_STRATEGY['list']))
+            ) {
                 $field->setName(RESERVED_WORD_CLASS_MEMBER_STRATEGY['prefix'] . $field->getName() . RESERVED_WORD_CLASS_MEMBER_STRATEGY['suffix']);
             }
         }

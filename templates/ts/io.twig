@@ -1,0 +1,124 @@
+{% block serialize %}
+{% if class.fields|length == 0 and class.serializeParent == false %}
+// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+public serialize(writer: BinaryDataWriter): void {}
+{% else %}
+public serialize(writer: BinaryDataWriter): void {
+{%~ if class.serializeParent and class.parent %}
+    super.serialize(writer);
+{%~ endif %}
+{% set isInBooleanByteField = false %}
+{% set booleanByteFieldsCount = 0 %}
+{%~ for field in class.fields -%}
+    {%- if field.useBooleanByteWrapper -%}
+        {%- if isInBooleanByteField == false -%}
+            {%- set isInBooleanByteField = true %}
+    let box{{ booleanByteFieldsCount }}: number = 0;
+        {%- endif ~%}
+    box{{ booleanByteFieldsCount }} = setFlag(box{{ booleanByteFieldsCount }}, {{ field.booleanByteWrapperPosition - 1 }}, this.{{ field.name }}!);
+        {%- if class.fields[loop.index0 + 1].useBooleanByteWrapper == false or class.fields[loop.index0 + 1].position != field.position ~%}
+    writer.writeByte(box{{ booleanByteFieldsCount }});
+            {%~ set isInBooleanByteField = false -%}
+            {%- set booleanByteFieldsCount = booleanByteFieldsCount + 1 -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if field.writeMethod -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthWriteMethod %}
+    writer.{{ field.lengthWriteMethod }}(this.{{ field.name }}!.length);
+                {%~ endif %}
+    this.{{ field.name }}!.forEach((current: {{ field.type }}) => writer.{{ field.writeMethod }}(current));
+            {%~ else %}
+    writer.{{ field.writeMethod }}(this.{{ field.name }}!);
+            {%~ endif -%}
+        {%- else -%}
+            {%- if field.isVector == true %}
+                {%- if field.lengthWriteMethod %}
+    writer.{{ field.lengthWriteMethod }}(this.{{ field.name }}!.length);
+                {%~ endif %}
+    this.{{ field.name }}!.forEach((current) => {
+                {%- if field.needTypeIdDefinition ~%}
+        writer.{{ field.typeIdWriteMethod }}(current.id);
+                {%- endif ~%}
+        current.serialize(writer);
+    });
+            {%~ else -%}
+                {% if field.needTypeIdDefinition %}
+    writer.{{ field.typeIdWriteMethod }}(this.{{ field.name }}!.id);
+                {%~ endif %}
+    this.{{ field.name }}!.serialize(writer);
+            {%~ endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+}
+{% endif %}
+{% endblock %}
+
+{% block deserialize %}
+{% if class.fields|length == 0 and class.serializeParent == false %}
+// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
+public deserialize(reader: BinaryDataReader): void {}
+{% else %}
+public deserialize(reader: BinaryDataReader): void {
+{%~ if class.serializeParent and class.parent %}
+    super.deserialize(reader);
+{%~ endif %}
+{% set isInBooleanByteField = false %}
+{% set booleanByteFieldsCount = 0 %}
+{%~ for field in class.fields -%}
+    {%- if field.useBooleanByteWrapper -%}
+        {%- if isInBooleanByteField == false -%}
+            {%- set isInBooleanByteField = true %}
+    const box{{ booleanByteFieldsCount }} = reader.readByte();
+        {%- endif ~%}
+    this.{{ field.name }} = getFlag(box{{ booleanByteFieldsCount }}, {{ field.booleanByteWrapperPosition - 1 }});
+        {%- if class.fields[loop.index0 + 1].useBooleanByteWrapper == false or class.fields[loop.index0 + 1].position != field.position ~%}
+            {%~ set isInBooleanByteField = false -%}
+            {%- set booleanByteFieldsCount = booleanByteFieldsCount + 1 -%}
+        {%- endif -%}
+    {%- else -%}
+        {%- if field.readMethod -%}
+            {%- if field.isVector == true %}
+    this.{{ field.name }} = [];
+                {%- if field.lengthReadMethod ~%}
+    const count{{ field.name|ucfirst }} = reader.{{ field.lengthReadMethod }}();
+                {%~ endif %}
+    for (let i: number = 0; i < {% if field.lengthReadMethod %}count{{ field.name|ucfirst }}{% else %}{{ field.constantLength }}{% endif %}; i++) {
+        this.{{ field.name }}.push(reader.{{ field.readMethod }}());
+    }
+            {%~ else %}
+    this.{{ field.name }} = reader.{{ field.readMethod }}();
+            {%~ endif -%}
+        {%- else -%}
+            {%- if field.isVector == true %}
+    this.{{ field.name }} = [];
+                {%- if field.lengthReadMethod ~%}
+    const count{{ field.name|ucfirst }} = reader.{{ field.lengthReadMethod }}();
+                {%~ endif %}
+    for (let i: number = 0; i < {% if field.lengthReadMethod %}count{{ field.name|ucfirst }}{% else %}{{ field.constantLength }}{% endif %}; i++) {
+                {%- if field.needTypeIdDefinition ~%}
+        const {{ field.name }}TypeId: number = reader.{{ field.typeIdReadMethod }}();
+        const type: {{ field.type }} = new types[{{ field.name }}TypeId]() as {{ field.type }};
+                {%- else ~%}
+        const type: {{ field.type }} = new {{ field.type }}();
+                {%- endif ~%}
+        type.deserialize(reader);
+        this.{{ field.name }}.push(type);
+    }
+            {%~ else -%}
+                {%- if field.needTypeIdDefinition %}
+    const {{ field.name }}TypeId: number = reader.{{ field.typeIdReadMethod }}();
+    this.{{ field.name }} = new types[{{ field.name }}TypeId]() as {{ field.type }};
+                {%- else %}
+    this.{{ field.name }} = new {{ field.type }}();
+                {%- endif ~%}
+    this.{{ field.name }}!.deserialize(reader);
+            {%~ endif -%}
+        {%- endif -%}
+    {%- endif -%}
+{%- endfor %}
+}
+{% endif %}
+
+{% endblock %}
